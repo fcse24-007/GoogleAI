@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A student or provider in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "description": "Email address" },
+        "role": { "type": "string", "enum": ["student", "provider"], "description": "User role" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Accommodation": {
+      "title": "Accommodation",
+      "description": "A housing listing in Gaborone.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Listing title" },
+        "price": { "type": "number", "description": "Monthly rent in BWP" },
+        "location": { "type": "string", "description": "Area in Gaborone (e.g., Gaborone West, Block 8)" },
+        "type": { "type": "string", "enum": ["Flat", "Shared House", "Studio", "Apartment"], "description": "Type of housing" },
+        "amenities": { "type": "array", "items": { "type": "string" }, "description": "List of amenities" },
+        "availabilityDate": { "type": "string", "format": "date", "description": "Date available (YYYY-MM-DD)" },
+        "depositAmount": { "type": "number", "description": "Required deposit in BWP" },
+        "imageUrl": { "type": "string", "description": "URL to listing image" },
+        "status": { "type": "string", "enum": ["Available", "Reserved"], "description": "Current status" },
+        "providerId": { "type": "string", "description": "UID of the provider" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "latitude": { "type": "number", "description": "Latitude for distance calculation" },
+        "longitude": { "type": "number", "description": "Longitude for distance calculation" }
+      },
+      "required": ["title", "price", "location", "type", "availabilityDate", "depositAmount", "status"]
+    },
+    "FilterPreference": {
+      "title": "FilterPreference",
+      "description": "Saved search criteria for a student.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the student" },
+        "minPrice": { "type": "number" },
+        "maxPrice": { "type": "number" },
+        "location": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["userId"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "A record of a successful deposit payment.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the student" },
+        "accommodationId": { "type": "string", "description": "ID of the listing" },
+        "receiptNumber": { "type": "string", "description": "Unique reference number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "accommodationId", "receiptNumber", "timestamp"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message between student and landlord.",
+      "type": "object",
+      "properties": {
+        "accommodationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["accommodationId", "senderId", "receiverId", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/accommodations/{id}": { "schema": "Accommodation", "description": "Housing listings" },
+    "/preferences/{userId}": { "schema": "FilterPreference", "description": "Saved search preferences" },
+    "/reservations/{id}": { "schema": "Reservation", "description": "Successful bookings" },
+    "/messages/{id}": { "schema": "Message", "description": "Chat history" }
+  }
+}

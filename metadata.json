@@ -1,0 +1,5 @@
+{
+  "name": "Student Accommodation Finder",
+  "description": "A comprehensive platform for students in Gaborone to find, filter, and reserve affordable housing with campus distance calculations and simulated payments.",
+  "requestFramePermissions": ["geolocation"]
+}

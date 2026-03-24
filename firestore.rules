@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid (string), name (string), email (string), role (string)
+    //
+    // Collection: accommodations
+    // Fields: title (string), price (number), location (string), type (string), 
+    //         amenities (list), availabilityDate (string), depositAmount (number), 
+    //         imageUrl (string), status (string), providerId (string), description (string),
+    //         latitude (number), longitude (number)
+    //
+    // Collection: preferences
+    // Fields: userId (string), minPrice (number), maxPrice (number), location (string), type (string)
+    //
+    // Collection: reservations
+    // Fields: userId (string), accommodationId (string), receiptNumber (string), timestamp (string)
+    //
+    // Collection: messages
+    // Fields: accommodationId (string), senderId (string), receiverId (string), text (string), timestamp (string)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "damditlhare@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasOnly(['uid', 'name', 'email', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
+             data.role in ['student', 'provider', 'admin'];
+    }
+
+    function isValidAccommodation(data) {
+      return data.keys().hasAll(['title', 'price', 'location', 'type', 'availabilityDate', 'depositAmount', 'status']) &&
+             data.title is string && data.title.size() < 200 &&
+             data.price is number && data.price >= 0 &&
+             data.location is string &&
+             data.type is string &&
+             data.amenities is list &&
+             data.availabilityDate is string &&
+             data.depositAmount is number &&
+             data.status in ['Available', 'Reserved'];
+    }
+
+    // Rules
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if (isOwner(uid) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /accommodations/{id} {
+      allow read: if true; // Publicly viewable
+      allow create: if isAuthenticated(); // Simplified for assignment, ideally provider only
+      allow update: if isAuthenticated(); // For reserving or editing
+      allow delete: if isAdmin();
+    }
+
+    match /preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /reservations/{id} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+
+    match /messages/{id} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.senderId;
+    }
+    
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
